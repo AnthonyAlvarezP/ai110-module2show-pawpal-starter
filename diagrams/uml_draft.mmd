@@ -1,0 +1,30 @@
+classDiagram
+    class Pet {
+        +str name
+        +int age
+        +float weight
+        +str breed
+    }
+
+    class Owner {
+        +int userID
+        +str name
+        +str email
+        +list pets
+    }
+
+    class Task {
+        +str title
+        +int duration_minutes
+        +str priority
+    }
+
+    class Scheduler {
+        +Owner owner
+        +list tasks
+    }
+
+    Owner "1" --> "many" Pet : owns
+    Scheduler "1" --> "1" Owner : plans for
+    Scheduler "1" --> "many" Task : schedules
+    Task --> Pet : for
