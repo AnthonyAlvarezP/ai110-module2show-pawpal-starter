@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import List
 
 
@@ -8,6 +9,7 @@ class Task:
     time: str        # HH:MM format
     frequency: str   # "daily", "weekly", "once"
     completed: bool = False
+    due_date: date = field(default_factory=date.today)
 
     def mark_complete(self) -> None:
         """Mark this task as completed."""
@@ -63,3 +65,43 @@ class Scheduler:
             if pet.name == pet_name:
                 return pet.tasks
         return []
+
+    def sort_by_time(self, tasks: List[Task]) -> List[Task]:
+        """Return tasks sorted in chronological order by time."""
+        return sorted(tasks, key=lambda task: tuple(int(x) for x in task.time.split(":")))
+
+    def filter_by_status(self, tasks: List[Task], completed: bool) -> List[Task]:
+        """Return tasks matching the given completion status."""
+        return [task for task in tasks if task.completed == completed]
+
+    def check_conflicts(self, tasks: List[Task]) -> str:
+        """Return a warning message listing any time slots with overlapping tasks, or empty string if none."""
+        seen = {}
+        for task in tasks:
+            if task.time in seen:
+                seen[task.time].append(task.description)
+            else:
+                seen[task.time] = [task.description]
+        warnings = [
+            f"⚠️ Conflict at {time}: {', '.join(names)}"
+            for time, names in seen.items()
+            if len(names) > 1
+        ]
+        return "\n".join(warnings)
+
+    def reschedule(self, task: Task, pet: Pet) -> None:
+        """Mark a recurring task complete and add a new instance for the next occurrence."""
+        task.mark_complete()
+        if task.frequency == "daily":
+            next_date = task.due_date + timedelta(days=1)
+        elif task.frequency == "weekly":
+            next_date = task.due_date + timedelta(weeks=1)
+        else:
+            return
+        new_task = Task(
+            description=task.description,
+            time=task.time,
+            frequency=task.frequency,
+            due_date=next_date,
+        )
+        pet.add_task(new_task)
